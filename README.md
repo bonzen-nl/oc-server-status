@@ -1,444 +1,335 @@
-# Server Status — OpenClaw Skill
+# oc-server-status
 
-**Gedetailleerde server health monitoring met autonoom rapportage.**
+**Unified Server & Token Monitoring for OpenClaw**
 
-Verzamelt RAM, CPU, Ollama, ChromaDB, API-kosten metrics en genereert intelligent Nederlandse analyses. Real-time Telegram alerts bij issues.
+Realtime monitoring van server gezondheid, token verbruik (alle providers), en kostenanalyse. Alle informatie in ÉÉN geïntegreerd rapport.
 
----
+## Features
 
-## 🎯 Wat doet Server Status?
+### 📊 Server Metrics
+- **RAM/Swap:** Realtime gebruik in GB en percentages
+- **CPU:** Load average (1/5/15 min), core count
+- **Disk:** Free space, total, percentage used
+- **Temperature:** CPU temp (macOS via system_profiler)
+- **Services:** Ollama models count/memory, ChromaDB doc count
 
-Server Status is een **comprehensive health monitoring systeem** dat:
+### 💰 Token Telemetry (Unified)
+- **Alle providers:** Anthropic, OpenAI, Google Gemini, Ollama
+- **Per provider:** Totaal tokens, kosten (EUR), aantal calls
+- **Top models:** Top 10 modellen per kosten (alle providers)
+- **Budget tracking:** Monthly limits, spent/remaining
 
-- **Metric Collection** — RAM, CPU, Swap, Disk, Temperature, Ollama, ChromaDB, API costs
-- **Analysis** — Mistral analyzeert metrics in context
-- **Rapportage** — Genereer 100-word Dutch summaries + knelpunten
-- **Automated Alerts** — Every 6 hours OR immediately on critical thresholds
-- **Cost Tracking** — Integreert API-spend data
-- **Message Queueing** — Reliable Telegram delivery via queue
+### 📈 Token Timeline Analysis
+- **Dagelijks:** Per-model breakdown (vandaag, gisteren, eergisteren)
+- **Wekelijks:** Trends per week per model
+- **Maandelijks:** Vergelijking vorige maanden per model
+- **Efficiency:** Kosten/token, tokens/call gemiddeld
 
-### 🔄 Monitoring Cycle
+### ⚙️ Intelligent Recommendations
+- RAM pressure detection & actions
+- Swap usage warnings
+- Budget burn rate alerts
+- Service availability checks
 
-```
-Every 6 hours (+ critical triggers):
-    ↓
-Collect metrics (psutil, system_profiler, Ollama, ChromaDB)
-    ↓
-Aggregate JSON
-    ↓
-Mistral analysis (local, no cloud API)
-    ↓
-Generate Dutch report (max 100 words)
-    ↓
-Queue to Telegram message queue
-    ↓
-Heartbeat processor sends Telegram
-    ↓
-Bob receives report + metrics
-```
-
----
-
-## 📦 Afhankelijkheden
-
-### Systeemvereisten
-- **Python:** 3.8+
-- **macOS:** system_profiler (for CPU/Temp)
-- **Ollama:** Running (optional, for model metrics)
-- **ChromaDB:** Path to database (optional)
-
-### Python Dependencies
-
-```
-psutil>=5.9.0                 # System metrics
-requests>=2.28.0              # Ollama API
-python-dotenv>=0.20.0         # .env loading
-pyyaml>=6.0                   # Config parsing
-```
-
-### External Services (optional)
-- Telegram bot (for alerts)
-- OpenAI/Gemini APIs (for cost tracking)
-
----
-
-## ⚡ Quickstart
-
-### 1. Installatie
+## Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/bonzen-nl/oc-server-status
+# Clone the repo
+git clone https://github.com/bonzen-nl/oc-server-status.git
 cd oc-server-status
 
-# Virtual environment
+# Setup Python venv
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Dependencies
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configuratie
+## Configuration
 
 ```bash
-# Copy template
-cp .env.example .env
+# Copy example config
+cp config/server_status.json.example config/server_status.json
 
-# Instellingen:
-# TELEGRAM_CHAT_ID=your_chat_id
-# OLLAMA_BASE_URL=http://127.0.0.1:11434
-# CHROMADB_PATH=/path/to/chromadb
-# REPORT_INTERVAL_HOURS=6
+# Edit with your settings
+nano config/server_status.json
 ```
 
-### 3. Setup LaunchAgent (Auto-start macOS)
+**Configuration keys:**
+- `monitoring.report_interval_hours` — Interval tussen rapporten
+- `monitoring.critical_ram_threshold_percent` — Critical RAM threshold
+- `telegram.enabled` — Telegram notifications aan/uit
+- `telegram.chat_id` — Telegram chat ID voor alerts
+- `chromadb_path` — Path naar ChromaDB index
+- `budget.monthly_limit_eur` — Monthly token budget (EUR)
+- `ollama_base_url` — Ollama API endpoint
+- `openai_api_key` — OpenAI API key (optioneel)
+- `anthropic_api_key` — Anthropic API key (optioneel)
+- `google_api_key` — Google Gemini API key (optioneel)
 
+## Usage
+
+### Generate Report (Text)
 ```bash
-# One-time setup
-python3 scripts/install_launchagent.py
-
-# Verify
-launchctl list | grep server-status
-
-# View logs
-tail -f /tmp/server_status.log
-```
-
-### 4. Test Report
-
-```bash
-# Generate report immediately (don't wait 6 hours)
 python3 scripts/server_status.py --now
-
-# Output: Full report with all metrics
 ```
 
----
+Output:
+```
+📊 OPENСLAW SERVER STATUS — 2026-02-27 23:05 CET
+================================================================================
 
-## 🚀 Gebruik
+🟢 HEALTHY
+────────────────────────────────────────────────
+RAM:  25.6% (  5.5GB /  24.0GB)
+CPU:    1.87 load (4 cores)
+Swap:   68.0% (  2.7GB /   4.0GB)
+Disk:    6.9% (155.4GB free)
 
-### Manual Reports
+SERVICES:
+  Ollama:    2 models (4.0GB)
+  ChromaDB:  99 docs (2.0MB)
 
+================================================================================
+💰 TOKEN TELEMETRIE — 2026-02
+================================================================================
+
+📊 TOTAAL:
+  Tokens:                130
+  Kosten:    €          0.00
+
+🔌 PER AANBIEDER (Anthropic, OpenAI, Google, Ollama):
+  ollama          | €    0.00 |        130 tokens
+
+🏆 TOP MODELLEN (alle providers):
+   1. ollama      /mistral                        €    0.00
+
+💳 BUDGET:
+  Monthly:   €    100.00
+  Spent:     €      0.00  (  0.0%)
+  Remaining: €    100.00
+  ✅ Gezond
+
+======================================================================
+📈 TOKEN VERBRUIK PER MODEL — Dag / Week / Maand
+======================================================================
+
+📅 DAGELIJKS (meest recent):
+
+  2026-02-27:
+    ollama/mistral                      |      130 tokens | €0.00
+
+📊 WEKELIJKS:
+
+  Week 2026-W08:
+    ollama/mistral                      |      130 tokens | €0.00 (1d)
+
+📈 MAANDELIJKS (trend):
+
+  ollama/mistral:
+    2026-02:      130 tokens | €0.00
+
+======================================================================
+
+================================================================================
+⚙️  AANBEVELINGEN:
+  ✅ RAM gezond
+
+================================================================================
+```
+
+### Generate Report (JSON)
 ```bash
-# Immediate status report
-python3 scripts/server_status.py --now
-
-# Verbose output (with all details)
-python3 scripts/server_status.py --now --verbose
-
-# JSON format (for parsing)
-python3 scripts/server_status.py --now --format json > /tmp/status.json
+python3 scripts/server_status.py --now --format json
 ```
 
-### Automatic Monitoring
+Output: Complete JSON with metrics, tokens, timeline for automation.
 
-Once LaunchAgent installed, runs automatically:
-
+### Scheduled Reports (LaunchAgent / Cron)
 ```bash
-# Check if running
-ps aux | grep server_status
-
-# View latest report logs
-tail -20 /tmp/server_status.log
+# Every 6 hours (or custom interval)
+# Writes to /tmp/openclaw_messages/ for heartbeat delivery
+python3 /path/to/oc-server-status/scripts/server_status.py --now
 ```
 
-### Report Content Example
-
-```
-📊 Server Status — 2026-02-27 22:00 CET
-
-System Health: ⚠️ CAUTION
-RAM: 72.5% (7.9GB / 10.9GB) — Approaching threshold
-CPU: Load 2.3 (4 cores) — Normal
-Swap: 58.2% (4.1GB / 7.0GB) — Healthy
-
-Ollama Models: 2 active
-  • mistral-small3.1:24b (5.2GB)
-  • nomic-embed-text (1.3GB)
-
-ChromaDB: 99 documents indexed
-  • Size: 2.5MB
-  • Last access: 2m ago
-
-API Costs (Month):
-  • Claude: €12.50 (3,200 tokens)
-  • Gemini: €3.20 (estimated)
-  • Total: €15.70 / €50 budget
-
-⚠️ Knelpunten:
-- RAM approaching 75% threshold
-- Recommend: Close Safari/Chrome to free 2-3GB
-- Consider: Unload Mistral if not in use
-
-✅ System Status: OPERATIONAL
-```
-
----
-
-## 🏗️ Projectstructuur
+## Project Structure
 
 ```
 oc-server-status/
-├── SKILL.md                          # Skill documentatie
-├── README.md                         # Dit bestand
-├── requirements.txt                  # Python dependencies
-├── .env.example                      # Configuration template
-├── .gitignore                        # Git security
-├── LICENSE                           # MIT
+├── README.md                           # Dit bestand
+├── LICENSE                             # MIT
+├── requirements.txt                    # Python dependencies
+│
 ├── config/
-│   └── server_status.json            # Report settings
+│   └── server_status.json.example      # Configuration template
+│
 ├── scripts/
-│   ├── server_status.py              # Main monitor
-│   ├── metrics_collector.py          # System metrics
-│   ├── install_launchagent.py        # macOS setup
-│   └── cost_tracker.py               # API costs
-├── lib/
-│   ├── analyzer.py                   # Mistral analysis
-│   ├── reporter.py                   # Report generation
-│   ├── notifier.py                   # Telegram queue
-│   └── metrics.py                    # Collection logic
-└── .venv/                            # Virtual environment
+│   └── server_status.py                # Main unified report generator
+│
+└── lib/
+    ├── metrics_collector.py            # System metrics (RAM, CPU, Disk, etc)
+    ├── token_telemetry.py              # Token tracking + timeline analysis
+    └── __init__.py
 ```
 
----
+## Integrations
 
-## 📊 Collected Metrics
+### Telegram Notifications
+Automatic alerts when:
+- RAM > 90% (critical)
+- Swap > 85% (soft cleanup trigger)
+- Monthly budget > 75% spent
+- Server errors detected
 
-### System Metrics
-- **RAM:** Total, used, available (GB + %)
-- **Swap:** Total, used (GB + %)
-- **CPU:** Load averages (1min, 5min, 15min)
-- **Disk:** Free space per volume
-- **Temperature:** M-chip temperature (if available)
+### Ollama Integration
+- Auto-detect running models
+- Memory tracking per model
+- Model unload on RAM pressure
 
-### Service Metrics
-- **Ollama:** Running models, tokens/sec, memory usage
-- **ChromaDB:** Document count, database size
-- **System Load:** CPU percentage, process count
+### ChromaDB Integration
+- Document count monitoring
+- Database size tracking
+- Integrity checks
 
-### Cost Metrics
-- **Claude (Anthropic):** Monthly spend + tokens
-- **Gemini (Google):** Estimated spend
-- **OpenAI:** If configured
-- **Total:** Budget vs. spent
+### Multi-Provider Token Tracking
+Automatically aggregates token usage from:
+- **Anthropic:** Claude models (Haiku, Sonnet, etc)
+- **OpenAI:** GPT models
+- **Google:** Gemini models
+- **Ollama:** Local models (Mistral, Llama, etc)
 
----
+## Architecture
 
-## 🔐 Veiligheid
+### metrics_collector.py
+Collects system metrics via psutil & macOS system_profiler.
 
-### Environment Variables
-- TELEGRAM_CHAT_ID — Safely stored in .env
-- API keys (optional) — Never logged
-- Metrics — Contain no sensitive data
+**Functions:**
+- `collect()` — Gather all metrics snapshot
+- Returns: Dict with ram, swap, cpu, disk, temperature, ollama, chromadb
 
-### Data Retention
-- Reports queued in `/tmp/openclaw_messages/`
-- Processed & deleted after send
-- Logs in `/tmp/server_status.log` (safe to share)
+### token_telemetry.py
 
----
+#### TokenTelemetry class
+Primary token tracking & cost analysis.
 
-## 🧪 Testing
+**Methods:**
+- `get_monthly_stats()` — Maandelijkse token stats (totaal, per provider, per model, budget)
+- `get_provider_models()` — Lijst modellen per provider
+- `calculate_cost()` — Cost calculation per model
 
-### Unit Tests
+#### TokenTimelineAnalyzer class
+Per-model timeline breakdown.
 
+**Methods:**
+- `get_daily_model_tokens(year, month)` — Dagelijks per model
+- `get_weekly_model_tokens(year, month)` — Wekelijks per model
+- `get_monthly_model_tokens(months_back)` — Maandelijks trend
+
+**Helper:**
+- `format_token_timeline_section()` — Geformateerde output voor rapport
+
+### server_status.py
+Main orchestrator. Combineert alle data in unified rapport.
+
+**Functions:**
+- `generate_unified_report()` — Samenstelt server + tokens + timeline
+- `main()` — CLI entry point
+
+## Monitoring Strategy
+
+### Token Budget
+- Default: €100/month per provider
+- Configurable per provider/model
+- Forecasting: extrapolatie naar maand-einde
+
+### RAM Management
+- Warning: 70% RAM used
+- Critical: 90% RAM used
+- Swap: 80% warns, 90% critical alert
+
+### System Health
+- Status indicator: HEALTHY / CAUTION / CRITICAL
+- Color-coded output (emojis)
+- Actionable recommendations
+
+## Data Sources
+
+### Metrics
+- `psutil.virtual_memory()` — RAM/Swap
+- `psutil.cpu_times()` — CPU load
+- `psutil.disk_usage()` — Disk space
+- `system_profiler` — Temperature (macOS)
+- Ollama JSON-RPC API — Model info
+- ChromaDB direct query — Doc counts
+
+### Tokens
+- Local database: `token_usage.db` (software-architect skill)
+- SQL queries for aggregation:
+  - `model_calls` table (timestamp, model, provider, tokens, cost)
+  - Group by date/week/month for timeline
+
+## Security
+
+- ✅ API keys in `.env` (not in git)
+- ✅ Sensitive data masked in Telegram messages
+- ✅ Local computation only (no external APIs for metrics)
+- ✅ Database encryption ready (future)
+
+## Troubleshooting
+
+### "Database not found"
 ```bash
-# Test metrics collection
-python3 -m pytest tests/test_metrics.py -v
+# Check token_usage.db location
+ls -la /Users/bonzen/.openclaw/skills/software-architect/token_usage.db
 
-# Test report generation
-python3 -m pytest tests/test_reporter.py
-
-# Test message queue
-python3 -m pytest tests/test_notifier.py
+# Update db_path in scripts/server_status.py if needed
 ```
 
-### Manual Tests
-
+### "Ollama connection error"
 ```bash
-# Dry-run (show report, don't send)
-python3 scripts/server_status.py --now --dry-run
+# Check Ollama is running
+ollama serve
 
-# Test Telegram connectivity
-python3 scripts/test_telegram.py
+# Check endpoint in config
+curl http://127.0.0.1:11434/api/tags
 ```
 
----
-
-## 🐛 Troubleshooting
-
-### LaunchAgent Not Running
+### "Telegram not sending"
 ```bash
-# Check status
-launchctl list | grep server-status
+# Verify chat ID in config
+# Check message queue: ls -la /tmp/openclaw_messages/
 
-# Restart service
-launchctl stop nl.openclaw.server-status
-launchctl start nl.openclaw.server-status
-
-# Debug
-log stream --predicate 'process == "server_status"'
-```
-
-### Missing Metrics
-- Ollama not running? → Install via `brew install ollama`
-- ChromaDB path wrong? → Check in .env
-- Telegram failing? → Verify bot token
-
-### Reports Not Sending
-- Check message queue: `ls -la /tmp/openclaw_messages/`
-- Verify Telegram chat ID in .env
-- Test: `python3 scripts/test_telegram.py`
-
----
-
-## 🔗 Sub-Projecten & Integraties
-
-Server Status is onderdeel van het **OpenClaw Skills Ecosystem**:
-
-### Master Hub
-- **[oc-overzicht](https://github.com/bonzen-nl/oc-overzicht)** — Central index
-
-### Gerelateerde Skills
-- **[oc-software-architect](https://github.com/bonzen-nl/oc-software-architect)** — Receives cost metrics
-- **[oc-ram-guardian](https://github.com/bonzen-nl/oc-ram-guardian)** — Complementary monitoring
-- **[oc-openclaw-expert](https://github.com/bonzen-nl/oc-openclaw-expert)** — Monitored service
-- **[oc-github-manager](https://github.com/bonzen-nl/oc-github-manager)** — Can log issues
-
-### Integration Points
-
-**Software-Architect consults status:**
-```python
-status = architect.get_system_status()
-if status['ram_percent'] > 80:
-    task.defer()  # Wait for system to stabilize
-```
-
-**GitHub Manager logs critical events:**
-```python
-if status['critical_alert']:
-    github_mgr.create_issue(
-        title="🚨 Critical system event",
-        description=status['report']
-    )
-```
-
----
-
-## 📈 Performance Metrics
-
-- **Collection overhead:** ~2-3% CPU
-- **Analysis (Mistral):** ~7-8 sec, local only
-- **Report generation:** ~1 sec
-- **Total cycle:** <15 seconds
-- **Memory footprint:** ~50MB
-
----
-
-## 📝 Licentie
-
-MIT © 2026 Bonzen
-
----
-
-## 📬 Ondersteuning
-
-- **Issues:** [oc-server-status/issues](https://github.com/bonzen-nl/oc-server-status/issues)
-- **Integration:** Zie [oc-software-architect](https://github.com/bonzen-nl/oc-software-architect)
-
----
-
-**Onderdeel van:** [OpenClaw Skills Suite](https://github.com/bonzen-nl/oc-overzicht)
-
----
-
-## 💰 Token Telemetry Integration (v1.1.0)
-
-**NEW:** Volledige token-tracking en cost-analyse in status-reports!
-
-OpenClaw Server Status bevat nu gedetailleerde token-verbruik analytics. Elke status-rapport toont:
-
-### Token Overview
-- Totaal tokens (input + output)
-- Totaal kosten (EUR)
-- Breakdown per aanbieder (Anthropic, OpenAI, Gemini, Ollama)
-- Per-model kostening
-- Per-project tracking
-- Monthly budget remaining
-
-### Module Details
-
-**`lib/token_telemetry.py`** — Token tracking engine
-- Reads from software-architect's token_usage.db
-- Calculates costs per provider/model
-- Supports monthly, daily, project-level reporting
-- Budget alerts & tracking
-- Full Dutch documentation + inline comments
-
-**`lib/metrics_collector.py`** — System metrics collector
-- RAM, CPU, Disk, Temperature monitoring
-- Ollama service metrics
-- ChromaDB statistics
-- Complete with docstrings & type hints
-
-**`scripts/server_status.py`** — Main orchestrator
-- Combines metrics + token telemetry
-- Generates unified Dutch report
-- Supports text/JSON output
-- CLI interface (--now, --verbose, --format)
-
-### Example Output
-
-```
-💰 TOKEN TELEMETRIE (2026-02):
-  Totaal Tokens:        125,450
-  Totaal Kosten:        €15.70
-
-  Per aanbieder:
-    anthropic   : €12.50 (  95,000 tokens)
-      • claude-3-5-sonnet: €12.50
-    openai      :  €2.80 (  23,450 tokens)
-      • gpt-4o-mini: €2.80
-    gemini      :  €0.40 (   7,000 tokens)
-    ollama      :  €0.00 (   0 tokens)
-
-  Budget Remaining: €84.30
-```
-
-### Usage
-
-```bash
-# Generate full report with token telemetry
+# Send manual test
 python3 scripts/server_status.py --now
-
-# JSON output
-python3 scripts/server_status.py --now --format json
-
-# Verbose details
-python3 scripts/server_status.py --now --verbose
 ```
 
-### Files Added
-- `lib/token_telemetry.py` — Token analytics (350+ lines, fully documented)
-- `lib/metrics_collector.py` — System metrics (280+ lines, fully documented)
-- `scripts/server_status.py` — Main script (220+ lines, fully documented)
-- `config/server_status.json` — Configuration
-- `requirements.txt` — Dependencies
-- `README_TOKEN_TELEMETRY.md` — Integration details
+### "Memory calculation off"
+```bash
+# Verify metrics collection
+python3 -c "from lib.metrics_collector import MetricsCollector; m = MetricsCollector(); print(m.collect()['ram'])"
+```
 
-### Testing
-All modules have been tested and verified:
-✅ Metrics collection
-✅ Token database queries
-✅ Report generation
-✅ Full server status with token telemetry
+## Contributing
 
-### Documentatie
-- Alle Python modules: Nederlandse docstrings + inline comments
-- Type hints op alle functies
-- Exception handling voor robustness
-- Complete integration documentation
+Issues & PRs welcome! Please:
+1. Keep code in Dutch (docstrings, comments)
+2. Type hints on all functions
+3. Error handling comprehensive
+4. Test before push
 
-See `README_TOKEN_TELEMETRY.md` for detailed technical documentation.
+## License
 
+MIT — See LICENSE file
+
+## Support
+
+- **Docs:** https://docs.openclaw.ai/
+- **Issues:** https://github.com/bonzen-nl/oc-server-status/issues
+- **Discord:** https://discord.com/invite/clawd
+
+---
+
+**Version:** 1.3.0 (Unified Report)  
+**Last Updated:** 2026-02-27  
+**Author:** Mavy (OpenClaw Agent)
