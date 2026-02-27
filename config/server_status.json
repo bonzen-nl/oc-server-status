@@ -1,0 +1,28 @@
+{
+  "monitoring": {
+    "report_interval_hours": 6,
+    "critical_ram_threshold_percent": 90,
+    "warning_ram_threshold_percent": 75,
+    "check_interval_seconds": 300
+  },
+  "telegram": {
+    "enabled": true,
+    "chat_id": 8106588289,
+    "message_queue_path": "/tmp/openclaw_messages"
+  },
+  "ollama": {
+    "base_url": "http://127.0.0.1:11434",
+    "timeout_seconds": 5
+  },
+  "chromadb": {
+    "path": "/Users/bonzen/.openclaw/workspace/openclaw_rag/index_data/openclaw_chroma_local.json"
+  },
+  "budget": {
+    "monthly_limit_eur": 100,
+    "alert_threshold_percent": 75
+  },
+  "token_tracking": {
+    "enabled": true,
+    "database_path": "/Users/bonzen/.openclaw/skills/software-architect/token_usage.db"
+  }
+}

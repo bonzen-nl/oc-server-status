@@ -350,3 +350,95 @@ MIT © 2026 Bonzen
 ---
 
 **Onderdeel van:** [OpenClaw Skills Suite](https://github.com/bonzen-nl/oc-overzicht)
+
+---
+
+## 💰 Token Telemetry Integration (v1.1.0)
+
+**NEW:** Volledige token-tracking en cost-analyse in status-reports!
+
+OpenClaw Server Status bevat nu gedetailleerde token-verbruik analytics. Elke status-rapport toont:
+
+### Token Overview
+- Totaal tokens (input + output)
+- Totaal kosten (EUR)
+- Breakdown per aanbieder (Anthropic, OpenAI, Gemini, Ollama)
+- Per-model kostening
+- Per-project tracking
+- Monthly budget remaining
+
+### Module Details
+
+**`lib/token_telemetry.py`** — Token tracking engine
+- Reads from software-architect's token_usage.db
+- Calculates costs per provider/model
+- Supports monthly, daily, project-level reporting
+- Budget alerts & tracking
+- Full Dutch documentation + inline comments
+
+**`lib/metrics_collector.py`** — System metrics collector
+- RAM, CPU, Disk, Temperature monitoring
+- Ollama service metrics
+- ChromaDB statistics
+- Complete with docstrings & type hints
+
+**`scripts/server_status.py`** — Main orchestrator
+- Combines metrics + token telemetry
+- Generates unified Dutch report
+- Supports text/JSON output
+- CLI interface (--now, --verbose, --format)
+
+### Example Output
+
+```
+💰 TOKEN TELEMETRIE (2026-02):
+  Totaal Tokens:        125,450
+  Totaal Kosten:        €15.70
+
+  Per aanbieder:
+    anthropic   : €12.50 (  95,000 tokens)
+      • claude-3-5-sonnet: €12.50
+    openai      :  €2.80 (  23,450 tokens)
+      • gpt-4o-mini: €2.80
+    gemini      :  €0.40 (   7,000 tokens)
+    ollama      :  €0.00 (   0 tokens)
+
+  Budget Remaining: €84.30
+```
+
+### Usage
+
+```bash
+# Generate full report with token telemetry
+python3 scripts/server_status.py --now
+
+# JSON output
+python3 scripts/server_status.py --now --format json
+
+# Verbose details
+python3 scripts/server_status.py --now --verbose
+```
+
+### Files Added
+- `lib/token_telemetry.py` — Token analytics (350+ lines, fully documented)
+- `lib/metrics_collector.py` — System metrics (280+ lines, fully documented)
+- `scripts/server_status.py` — Main script (220+ lines, fully documented)
+- `config/server_status.json` — Configuration
+- `requirements.txt` — Dependencies
+- `README_TOKEN_TELEMETRY.md` — Integration details
+
+### Testing
+All modules have been tested and verified:
+✅ Metrics collection
+✅ Token database queries
+✅ Report generation
+✅ Full server status with token telemetry
+
+### Documentatie
+- Alle Python modules: Nederlandse docstrings + inline comments
+- Type hints op alle functies
+- Exception handling voor robustness
+- Complete integration documentation
+
+See `README_TOKEN_TELEMETRY.md` for detailed technical documentation.
+
